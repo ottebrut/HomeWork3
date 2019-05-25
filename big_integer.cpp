@@ -46,7 +46,7 @@ big_integer::big_integer(std::string const& s) {
     }
     std::reverse(tmp.begin(), tmp.end());
     while((tmp.size() != 1 || tmp[0] != 0) && tmp.size() != 0) {
-        uint mod = (uint)mod_division(tmp, BASE, 10); //HERE
+        uint mod = (uint)mod_division(tmp, BASE, 10);
         number.push_back(mod);
     }
     clear_end(number);
@@ -172,28 +172,27 @@ int compare(big_integer const& a, big_integer const& b, bool abs = false) {
     return compare(a.number, b.number);
 }
 
-bool operator<(big_integer const& a, big_integer const& b)
-{
+bool operator<(big_integer const& a, big_integer const& b){
     return compare(a, b) < 0;
 }
-bool operator<=(big_integer const& a, big_integer const& b)
-{
+
+bool operator<=(big_integer const& a, big_integer const& b){
     return compare(a, b) <= 0;
 }
-bool operator>(big_integer const& a, big_integer const& b)
-{
+
+bool operator>(big_integer const& a, big_integer const& b){
     return compare(a, b) > 0;
 }
-bool operator>=(big_integer const& a, big_integer const& b)
-{
+
+bool operator>=(big_integer const& a, big_integer const& b){
     return compare(a, b) >= 0;
 }
-bool operator==(big_integer const& a, big_integer const& b)
-{
+
+bool operator==(big_integer const& a, big_integer const& b){
     return compare(a, b) == 0;
 }
-bool operator!=(big_integer const& a, big_integer const& b)
-{
+
+bool operator!=(big_integer const& a, big_integer const& b){
     return compare(a, b) != 0;
 }
 
@@ -215,7 +214,6 @@ big_integer &big_integer::operator+=(big_integer const &rhs) {
         add(number, number, rhs.number);
         return *this;
     }
-//    number.change_ptr();
     int comp = compare(*this, rhs, true);
     if (comp == 0) {
         number.resize(1);
@@ -245,6 +243,7 @@ big_integer &big_integer::operator*=(big_integer const &rhs) {
     return *this;
 }
 
+
 big_integer& big_integer::operator/=(big_integer const& rhs) {
     sign ^= rhs.sign;
     big_integer copy = *this;
@@ -265,11 +264,11 @@ big_integer& big_integer::operator%=(big_integer const& rhs) {
 
 void big_integer::add(vector_uint &res, const vector_uint &a, const vector_uint &b) {
     size_t len = std::max(a.size(), b.size()) + 1;
+    size_t a_size = a.size(), b_size = b.size();
     res.resize(len);
-    res.change_ptr();
     ull carry = 0;
     for (size_t i = 0; i < len; ++i) {
-        ull tmp = (ull)(i < a.size() ? a[i] : 0) + (i < b.size() ? b[i] : 0) + carry;
+        ull tmp = (ull)(i < a_size ? a[i] : 0) + (i < b_size ? b[i] : 0) + carry;
         res[i] = tmp % BASE;
         carry = tmp / BASE;
     }
@@ -277,11 +276,12 @@ void big_integer::add(vector_uint &res, const vector_uint &a, const vector_uint 
 }
 
 void big_integer::subtract(vector_uint &res, const vector_uint &a, const vector_uint &b) {
-    size_t len = std::max(a.size(), b.size()) + 1;
+    size_t len = std::max(a.size(), b.size());
+    size_t b_size = b.size();
     res.resize(len);
     ull carry = 0;
-    for (size_t i = 0; i < a.size(); ++i) {
-        ull tmp = carry + (i < b.size() ? b[i] : 0);
+    for (size_t i = 0; i < b_size || carry; ++i) {
+        ull tmp = carry + (i < b_size ? b[i] : 0);
         if (a[i] < tmp) {
             res[i] = BASE - tmp + a[i];
             carry = 1;
@@ -311,14 +311,15 @@ void big_integer::multiply(vector_uint &res, const vector_uint &a, const vector_
         //division
 
 void big_integer::long_mul_short(vector_uint &res, const vector_uint &a, const uint b) {
+    size_t a_size = a.size();
     res.resize(a.size() + 1);
     uint carry = 0;
-    for(size_t i = 0; i < a.size(); ++i) {
+    for(size_t i = 0; i < a_size; ++i) {
         ull tmp = (ull)a[i] * b + carry;
         res[i] = tmp % BASE;
         carry = tmp / BASE;
     }
-    res[a.size()] = carry;
+    res[a_size] = carry;
 }
 
 bool compare_equal_vector(const vector_uint &a, const vector_uint &b) {
@@ -345,16 +346,18 @@ void big_integer::subtract_equal_vector(vector_uint &a, const vector_uint &b) {
 }
 
 void big_integer::long_div_short(vector_uint &res, const vector_uint &a, const uint b) {
+    size_t a_size = a.size();
     res.resize(a.size());
     uint carry = 0;
-    for(size_t i = a.size() - 1; i < UINT64_MAX; i--)
+    for(size_t i = a_size - 1; i < UINT64_MAX; i--)
     {
-        ull tmp = (ull) carry*BASE + a[i];
+        ull tmp = (ull)carry * BASE + a[i];
         res[i] = tmp / b;
         carry = tmp % b;
     }
     clear_end(res);
 }
+
 void big_integer::divide(vector_uint &res, vector_uint const &a, vector_uint const &b) {
     int sign = compare(a, b);
     res.clear();
@@ -372,19 +375,24 @@ void big_integer::divide(vector_uint &res, vector_uint const &a, vector_uint con
         return;
     }
     uint d = (uint)(BASE / (b[b.size() - 1] + 1));
-    vector_uint u(a), v(b);
+    vector_uint u(a.size()), v(b.size());
+    for(size_t i = 0; i < a.size(); i++) {
+        u[i] = a[i];
+    }
+    for(size_t i = 0; i < b.size(); i++) {
+        v[i] = b[i];
+    }
     long_mul_short(u, a, d);
     clear_end(u);
     long_mul_short(v, b, d);
     clear_end(v);
     size_t n = u.size(), m = v.size(), len = n - m + 1;
     res.resize(len);
-    vector_uint dividend, divider;
-    dividend.resize(m + 1);
-    divider.resize(m);
+    vector_uint dividend(m + 1), divider(m + 1);
     for(size_t i = 0; i < m; ++i) {
         dividend[i] = u[n + i - m];
     }
+    dividend[m] = n < u.size() ? u[n] : 0;
     for(size_t i = 0; i < len; ++i) {
         dividend[0] = u[n - m - i];
         uint tmp = std::min((BASE * dividend[m] + dividend[m - 1]) / v[v.size() - 1], BASE - 1);
@@ -431,25 +439,28 @@ big_integer& big_integer::operator>>=(int rhs) {
 
 void big_integer::long_and(vector_uint &res, vector_uint const &a, vector_uint const &b) {
     size_t len = std::max(a.size(), b.size());
+    size_t a_size = a.size(), b_size = b.size();
     res.resize(len);
-    for(uint i = 0; i < len; i++) {
-        res[i] = a[std::min(a.size() - 1, i)] & b[std::min(b.size() - 1, i)];
+    for(size_t i = 0; i < len; i++) {
+        res[i] = a[std::min(a_size - 1, i)] & b[std::min(b_size - 1, i)];
     }
 }
 
 void big_integer::long_or(vector_uint &res, vector_uint const &a, vector_uint const &b) {
     size_t len = std::max(a.size(), b.size());
+    size_t a_size = a.size(), b_size = b.size();
     res.resize(len);
-    for(uint i = 0; i < len; i++) {
-        res[i] = a[std::min(a.size() - 1, i)] | b[std::min(b.size() - 1, i)];
+    for(size_t i = 0; i < len; i++) {
+        res[i] = a[std::min(a_size - 1, i)] | b[std::min(b_size - 1, i)];
     }
 }
 
 void big_integer::long_xor(vector_uint &res, vector_uint const &a, vector_uint const &b) {
     size_t len = std::max(a.size(), b.size());
+    size_t a_size = a.size(), b_size = b.size();
     res.resize(len);
-    for(uint i = 0; i < len; i++) {
-        res[i] = a[std::min(a.size() - 1, i)] ^ b[std::min(b.size() - 1, i)];
+    for(size_t i = 0; i < len; i++) {
+        res[i] = a[std::min(a_size - 1, i)] ^ b[std::min(b_size - 1, i)];
     }
 }
 
@@ -510,7 +521,7 @@ vector_uint big_integer::big_integer_to_byte_vector(const big_integer &a) {
 }
 
 big_integer big_integer::byte_vector_to_big_integer(const vector_uint &a) {
-    vector_uint res = a;
+    vector_uint res(a);
     int sign = 0;
     if(a[a.size() - 1] == MAX_UINT32)
     {
