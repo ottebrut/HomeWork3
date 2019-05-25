@@ -50,7 +50,7 @@ void vector_uint::reserve(size_t new_capacity) {
 
 void vector_uint::set_capacity(size_t new_capacity) {
     if (is_big()) {
-        data_.big_obj.ptr.reset(copy_data(new_capacity, size_, my_data), my_deleter());
+        data_.big_obj.ptr.reset(copy_data(new_capacity, size_, my_data));
         data_.big_obj.capacity = new_capacity;
         my_data = data_.big_obj.ptr.get();
     } else {
@@ -68,12 +68,11 @@ size_t vector_uint::size() const {
 }
 
 uint& vector_uint::operator[](size_t ind) {
-    assert(!is_big() || data_.big_obj.ptr.unique());
+    change_ptr();
     return my_data[ind];
 }
 
 const uint& vector_uint::operator[](size_t ind) const {
-    assert(!is_big() || data_.big_obj.ptr.unique());
     return my_data[ind];
 }
 
@@ -118,7 +117,7 @@ vector_uint& vector_uint::operator =(vector_uint const &other) {
 }
 
 void vector_uint::pop_back() {
-    assert(!is_big() || data_.big_obj.ptr.unique());
+    change_ptr();
     size_--;
     my_data[size_] = 0;
 }
@@ -186,7 +185,7 @@ bool vector_uint::is_big() const {
 void vector_uint::change_ptr() {
     if (is_big() && !data_.big_obj.ptr.unique())
     {
-        data_.big_obj.ptr.reset(copy_data(size(), size(), my_data), my_deleter());
+        data_.big_obj.ptr.reset(copy_data(size(), size(), my_data));
         my_data = data_.big_obj.ptr.get();
     }
 }
