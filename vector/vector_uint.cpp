@@ -11,7 +11,7 @@ uint* copy_data(size_t capacity, size_t size, const uint *src) {
     return dst;
 }
 
-vector_uint::vector_uint(): size_(0), capacity_(SMALL_SIZE), my_data(data_.small_obj) {
+vector_uint::vector_uint(): size_(0), capacity_(0), my_data(data_.small_obj) {
     memset(my_data, 0, SMALL_SIZE * sizeof(uint));
 }
 
@@ -110,7 +110,7 @@ void vector_uint::swap(vector_uint &other) {
     std::swap(capacity_, other.capacity_);
 }
 
-vector_uint& vector_uint::operator =(vector_uint const &other) {
+vector_uint& vector_uint::operator=(vector_uint const &other) {
     vector_uint temp(other);
     swap(temp);
     return *this;
@@ -123,8 +123,8 @@ void vector_uint::pop_back() {
 }
 
 void vector_uint::push_back(const uint a) {
-    if (get_capacity() <= size_) {
-        reserve(increase_capacity(size_));
+    if (size_ == get_capacity()) {
+        reserve(size_ * 2);
     }
     my_data[size_] = a;
     size_++;
@@ -132,11 +132,6 @@ void vector_uint::push_back(const uint a) {
 
 uint vector_uint::back() {
     return my_data[size_ - 1];
-}
-
-size_t vector_uint::increase_capacity(size_t new_size) const {
-    if (new_size == 0) return SMALL_SIZE;
-    return new_size * 3 / 2;
 }
 
 uint* vector_uint::begin() {
